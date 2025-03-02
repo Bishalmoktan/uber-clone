@@ -32,7 +32,6 @@ const UserSchema = new Schema<IUser>({
   },
 });
 
-// Define instance methods
 UserSchema.methods.generateAuthTokens = function (): string {
   return jwt.sign({ _id: this._id }, JWT_SECRET!, { expiresIn: "24h" });
 };
