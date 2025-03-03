@@ -3,14 +3,10 @@ import jwt from "jsonwebtoken";
 import { JWT_SECRET } from "../config/env";
 import UserModel from "../models/user.model";
 import { BlackListTokenModel } from "../models/blacklistToken.model";
+import RiderModel from "../models/rider.model";
 
-// Extend Request type to include user property
-interface AuthRequest extends Request {
-  user?: any;
-}
-
-export const authMiddleware = async (
-  req: AuthRequest,
+export const userMiddleware = async (
+  req: Request,
   res: Response,
   next: NextFunction
 ) => {
@@ -52,6 +48,59 @@ export const authMiddleware = async (
     }
 
     req.user = user;
+    next();
+  } catch (error) {
+    console.log(error);
+    res.status(401).json({
+      message: "Unauthorized",
+    });
+    return;
+  }
+};
+
+export const riderMiddleware = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  const token = req.cookies?.token || req.headers.authorization?.split(" ")[1];
+
+  if (!token) {
+    res.status(401).json({
+      message: "Unauthorized",
+    });
+    return;
+  }
+
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET!) as jwt.JwtPayload;
+
+    if (!decoded._id) {
+      res.status(401).json({
+        message: "Invalid token",
+      });
+      return;
+    }
+
+    const blacklistedToken = await BlackListTokenModel.findOne({ token });
+
+    if (blacklistedToken) {
+      res.status(401).json({
+        message: "Unauthorized!",
+      });
+      return;
+    }
+
+    const rider = await RiderModel.findById(decoded._id);
+
+    if (!rider) {
+      res.status(401).json({
+        message: "Rider not found",
+      });
+      return;
+    }
+
+    req.rider = rider;
     next();
   } catch (error) {
     console.log(error);

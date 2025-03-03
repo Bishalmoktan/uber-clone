@@ -1,8 +1,8 @@
 import express, { Express, Request, Response } from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
-import AuthRoutes from "./routes/auth.routes";
-import UserRoutes from "./routes/user.routes";
+import UserRoutes from "./routes/user.route";
+import RiderRoutes from "./routes/rider.route";
 
 const app: Express = express();
 
@@ -17,7 +17,7 @@ app.get("/", (req: Request, res: Response) => {
   res.json({ message: "Welcome to Express + TypeScript Server" });
 });
 
-app.use("/api/auth", AuthRoutes);
 app.use("/api/users", UserRoutes);
+app.use("/api/riders", RiderRoutes);
 
 export default app;

@@ -10,7 +10,7 @@ export const createUser = async ({
     throw new Error("All fields are required");
   }
 
-  const user = UserModel.create({
+  const user = await UserModel.create({
     fullname,
     email,
     password,

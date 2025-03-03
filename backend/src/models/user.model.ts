@@ -48,7 +48,6 @@ UserSchema.statics.hashPassword = async function (
   return await bcrypt.hash(password, 10);
 };
 
-// Define UserModel with correct typings
 const UserModel = mongoose.model<IUser, IUserModel>("User", UserSchema);
 
 export default UserModel;
