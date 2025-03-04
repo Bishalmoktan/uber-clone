@@ -24,18 +24,16 @@ export const registerRider = async (req: Request, res: Response) => {
     return;
   }
 
+  const hashedPassword = await RiderModel.hashPassword(password);
+
   const rider = await createRider({
     fullname,
     email,
-    password,
+    password: hashedPassword,
     vehicle,
   });
 
-  console.log(rider);
-
   const token = rider.generateAuthTokens();
-
-  res.cookie("token", token);
 
   res.status(201).json({
     token,

@@ -70,7 +70,7 @@ const RiderSchema = new Schema<IRider>({
   },
 });
 
-RiderSchema.methods.generateAuthToken = function () {
+RiderSchema.methods.generateAuthTokens = function () {
   const token = jwt.sign({ _id: this._id }, JWT_SECRET!, {
     expiresIn: "24h",
   });

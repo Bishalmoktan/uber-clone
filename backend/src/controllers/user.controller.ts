@@ -19,7 +19,7 @@ export const registerUser = async (req: Request, res: Response) => {
 
   const { fullname, email, password } = req.body;
 
-  const doesUserExists = await UserModel.find({ email });
+  const doesUserExists = await UserModel.findOne({ email });
 
   if (doesUserExists) {
     res.status(400).json({
