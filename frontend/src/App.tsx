@@ -8,6 +8,8 @@ import UserLoginPage from "./pages/UserLoginPage";
 import UserSignupPage from "./pages/UserSignupPage";
 import RiderLoginPage from "./pages/RiderLoginPage";
 import RiderSignupPage from "./pages/RiderSignupPage";
+import ProtectedRoute from "./pages/ProtectedRoute";
+import DashboardPage from "./pages/DashboardPage";
 
 const router = createBrowserRouter([
   {
@@ -29,6 +31,17 @@ const router = createBrowserRouter([
   {
     path: "/rider-signup",
     element: <RiderSignupPage />,
+  },
+
+  {
+    path: "/dashboard",
+    element: <ProtectedRoute />,
+    children: [
+      {
+        path: "/dashboard",
+        element: <DashboardPage />,
+      },
+    ],
   },
 
   {
