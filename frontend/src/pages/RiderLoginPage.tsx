@@ -1,10 +1,34 @@
+import { yupResolver } from "@hookform/resolvers/yup";
+import * as yup from "yup";
+import { useForm } from "react-hook-form";
+import { useRiderLogin } from "@/hooks/user-auth";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Link } from "react-router-dom";
 
+const schema = yup.object({
+  email: yup.string().email().required("Email is required"),
+  password: yup.string().min(6).required("Password is required"),
+});
+
 export default function RiderLoginPage() {
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm({
+    resolver: yupResolver(schema),
+  });
+  const { mutate: loginRider, isPending } = useRiderLogin();
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const onSubmit = (data: any) => {
+    loginRider(data);
+  };
+
   return (
     <div className="min-h-screen bg-black text-white flex flex-col">
       {/* Header */}
@@ -15,64 +39,32 @@ export default function RiderLoginPage() {
       </header>
 
       {/* Main content */}
-      <main className="flex-1 flex items-center justify-center px-4 py-12">
+      <main className="flex-1 text-center flex items-center justify-center px-4 py-12">
         <div className="w-full max-w-md space-y-8">
           <div className="text-center">
             <h1 className="text-3xl font-bold">Driver Sign In</h1>
             <p className="text-gray-400 mt-2">Sign in to your driver account</p>
           </div>
 
-          <form className="space-y-6">
-            <div className="space-y-2">
+          <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
+            <div>
               <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                required
-                className="bg-gray-800 border-gray-700 text-white"
-                placeholder="name@example.com"
-              />
+              <Input id="email" {...register("email")} />
+              <p className="text-red-500">{errors.email?.message}</p>
             </div>
 
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="password">Password</Label>
-                <Link to="#" className="text-sm text-gray-400 hover:text-white">
-                  Forgot password?
-                </Link>
-              </div>
-              <Input
-                id="password"
-                type="password"
-                required
-                className="bg-gray-800 border-gray-700 text-white"
-              />
+            <div>
+              <Label htmlFor="password">Password</Label>
+              <Input type="password" id="password" {...register("password")} />
+              <p className="text-red-500">{errors.password?.message}</p>
             </div>
 
-            <Button
-              type="submit"
-              className="w-full bg-white text-black hover:bg-gray-200"
-            >
-              Sign in as Driver
+            <Button type="submit" disabled={isPending}>
+              {isPending ? "Logging in..." : "Login"}
             </Button>
           </form>
 
           <Separator className="my-6 bg-gray-700" />
-
-          <div className="space-y-4">
-            <Button
-              variant="outline"
-              className="w-full border-gray-700 hover:bg-gray-800"
-            >
-              Continue with Google
-            </Button>
-            <Button
-              variant="outline"
-              className="w-full border-gray-700 hover:bg-gray-800"
-            >
-              Continue with Apple
-            </Button>
-          </div>
 
           <div className="text-center mt-8">
             <p className="text-gray-400">

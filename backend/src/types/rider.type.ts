@@ -8,7 +8,7 @@ export interface IRider {
   };
   email: string;
   password: string;
-  location: ILocation;
+  location?: ILocation;
   vehicle: IVehicle;
   status: "active" | "inactive";
   socketId?: string;
