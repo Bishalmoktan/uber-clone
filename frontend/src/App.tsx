@@ -9,7 +9,7 @@ import UserSignupPage from "./pages/UserSignupPage";
 import RiderLoginPage from "./pages/RiderLoginPage";
 import RiderSignupPage from "./pages/RiderSignupPage";
 import ProtectedRoute from "./pages/ProtectedRoute";
-import DashboardPage from "./pages/DashboardPage";
+import DashboardPage from "./pages/dashboard/DashboardPage";
 
 const router = createBrowserRouter([
   {
