@@ -3,6 +3,7 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import UserRoutes from "./routes/user.route";
 import RiderRoutes from "./routes/rider.route";
+import MapsRoutes from "./routes/maps.route";
 
 const app: Express = express();
 
@@ -19,5 +20,6 @@ app.get("/", (req: Request, res: Response) => {
 
 app.use("/api/users", UserRoutes);
 app.use("/api/riders", RiderRoutes);
+app.use("/api/maps", MapsRoutes);
 
 export default app;
