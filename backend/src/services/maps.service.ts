@@ -7,7 +7,6 @@ export const getAddressCoordinate = async (address: string) => {
     address
   )}&key=${GOOGLE_MAP_API}`;
   try {
-    console.log(address);
     const response = await axios.get(url);
     if (response.data.status === "OK") {
       const location = response.data.results[0].geometry.location;
