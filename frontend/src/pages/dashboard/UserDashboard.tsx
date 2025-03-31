@@ -1,6 +1,6 @@
 import type React from "react";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -10,14 +10,14 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, MapPin, Search } from "lucide-react";
+import { ArrowLeft, Search } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import MapView from "@/components/map-view";
 import RideInfoCard from "@/components/rider-info-card";
+import { LocationInput } from "@/components/location-input";
+import VehiclePanel from "@/components/vehicle-panel";
+import { Label } from "@/components/ui/label";
+import { useCreateRide } from "@/services/ride.Service";
 
 // Mock data for available riders
 const availableRiders = [
@@ -67,15 +67,12 @@ export default function UserDashboard() {
   const [step, setStep] = useState(1);
   const [pickup, setPickup] = useState("");
   const [destination, setDestination] = useState("");
-  const [vehicleType, setVehicleType] = useState("sedan");
+  const [vehicleType, setVehicleType] = useState("");
   const [selectedRider, setSelectedRider] = useState<number | null>(null);
-  const [rideStatus, setRideStatus] = useState<"ongoing" | "completed">(
-    "ongoing"
-  );
-
-  const filteredRiders = availableRiders.filter(
-    (rider) => vehicleType === "all" || rider.vehicleType === vehicleType
-  );
+  const [rideStatus, setRideStatus] = useState<
+    "ongoing" | "pending" | "completed"
+  >("ongoing");
+  const { mutate: confirmRide } = useCreateRide();
 
   const handleFindRiders = (e: React.FormEvent) => {
     e.preventDefault();
@@ -84,14 +81,36 @@ export default function UserDashboard() {
     }
   };
 
+  useEffect(() => {
+    if (vehicleType) {
+      setStep(3);
+    }
+  }, [vehicleType]);
+
   const handleSelectRider = (riderId: number) => {
     setSelectedRider(riderId);
-    setStep(3);
+    // setStep(3);
   };
 
   const handleConfirmRide = () => {
     setStep(4);
-    setRideStatus("ongoing");
+    confirmRide(
+      {
+        pickup: "mulpani",
+        destination: "jorpati",
+        vehicleType: vehicleType,
+      },
+      {
+        onSuccess: () => {
+          setStep(4);
+          setRideStatus("pending");
+        },
+        onError: (error: unknown) => {
+          console.error("Ride creation failed:", error);
+        },
+      }
+    );
+    setRideStatus("pending");
   };
 
   const handleEndRide = () => {
@@ -110,8 +129,8 @@ export default function UserDashboard() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen">
-      <main className="flex-1 container py-6 md:py-12">
+    <div className="min-h-screen">
+      <main className="mx-auto container py-6 md:py-12">
         <div className="mx-auto max-w-md space-y-6">
           {step === 1 && (
             <Card>
@@ -123,34 +142,18 @@ export default function UserDashboard() {
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleFindRiders} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="pickup">Pickup Location</Label>
-                    <div className="flex items-center border rounded-md focus-within:ring-1 focus-within:ring-ring">
-                      <MapPin className="ml-3 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="pickup"
-                        placeholder="Enter pickup address"
-                        className="border-0 focus-visible:ring-0"
-                        value={pickup}
-                        onChange={(e) => setPickup(e.target.value)}
-                        required
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="destination">Destination</Label>
-                    <div className="flex items-center border rounded-md focus-within:ring-1 focus-within:ring-ring">
-                      <MapPin className="ml-3 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="destination"
-                        placeholder="Enter destination address"
-                        className="border-0 focus-visible:ring-0"
-                        value={destination}
-                        onChange={(e) => setDestination(e.target.value)}
-                        required
-                      />
-                    </div>
-                  </div>
+                  <LocationInput
+                    value={pickup}
+                    setValue={setPickup}
+                    label="Pickup Location"
+                    id="pickup"
+                  />
+                  <LocationInput
+                    value={destination}
+                    setValue={setDestination}
+                    label="Destination"
+                    id="destination"
+                  />
 
                   {pickup && destination && (
                     <div className="pt-2">
@@ -185,9 +188,7 @@ export default function UserDashboard() {
                   </Button>
                   <div>
                     <CardTitle>Choose a Ride</CardTitle>
-                    <CardDescription>
-                      Select vehicle type and driver
-                    </CardDescription>
+                    <CardDescription>Select vehicle type</CardDescription>
                   </div>
                 </div>
               </CardHeader>
@@ -198,56 +199,16 @@ export default function UserDashboard() {
                   showRoute={true}
                 />
 
-                <div className="space-y-2">
-                  <Label>Vehicle Type</Label>
-                  <Tabs defaultValue="sedan" onValueChange={setVehicleType}>
-                    <TabsList className="grid grid-cols-4 w-full">
-                      <TabsTrigger value="all">All</TabsTrigger>
-                      <TabsTrigger value="sedan">Sedan</TabsTrigger>
-                      <TabsTrigger value="suv">SUV</TabsTrigger>
-                      <TabsTrigger value="premium">Premium</TabsTrigger>
-                    </TabsList>
-                  </Tabs>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Available Drivers</Label>
-                  <div className="space-y-3">
-                    {filteredRiders.map((rider) => (
-                      <div
-                        key={rider.id}
-                        className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted cursor-pointer"
-                        onClick={() => handleSelectRider(rider.id)}
-                      >
-                        <div className="flex items-center gap-3">
-                          <Avatar>
-                            <AvatarImage src={rider.image} alt={rider.name} />
-                            <AvatarFallback>
-                              {rider.name.charAt(0)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <div className="font-medium">{rider.name}</div>
-                            <div className="text-sm text-muted-foreground">
-                              {rider.vehicle}
-                            </div>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="font-medium">{rider.price}</div>
-                          <div className="text-sm text-muted-foreground">
-                            {rider.eta} away
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                <VehiclePanel
+                  setVehicleType={setVehicleType}
+                  pickup={pickup}
+                  destination={destination}
+                />
               </CardContent>
             </Card>
           )}
 
-          {step === 3 && selectedRider && (
+          {step === 3 && (
             <Card>
               <CardHeader>
                 <div className="flex items-center">
@@ -282,46 +243,6 @@ export default function UserDashboard() {
                   </div>
                   <div className="font-medium">{destination}</div>
                 </div>
-
-                {(() => {
-                  const rider = availableRiders.find(
-                    (r) => r.id === selectedRider
-                  );
-                  if (!rider) return null;
-
-                  return (
-                    <div className="border rounded-lg p-4 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <div className="font-medium">Driver Details</div>
-                        <Badge variant="outline">
-                          {rider.vehicleType.toUpperCase()}
-                        </Badge>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <Avatar>
-                          <AvatarImage src={rider.image} alt={rider.name} />
-                          <AvatarFallback>
-                            {rider.name.charAt(0)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <div className="font-medium">{rider.name}</div>
-                          <div className="text-sm text-muted-foreground">
-                            {rider.vehicle}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <div>Estimated arrival:</div>
-                        <div className="font-medium">{rider.eta}</div>
-                      </div>
-                      <div className="flex justify-between">
-                        <div>Total fare:</div>
-                        <div className="font-medium">{rider.price}</div>
-                      </div>
-                    </div>
-                  );
-                })()}
               </CardContent>
               <CardFooter>
                 <Button onClick={handleConfirmRide} className="w-full">
@@ -331,7 +252,74 @@ export default function UserDashboard() {
             </Card>
           )}
 
-          {step === 4 && selectedRider && (
+          {step === 4 && (
+            <Card>
+              <CardHeader>
+                <div className="flex items-center">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setStep(3)}
+                    className="mr-2"
+                  >
+                    <ArrowLeft className="h-4 w-4" />
+                  </Button>
+                  <div>
+                    <CardTitle>Confirm Your Ride</CardTitle>
+                    <CardDescription>Select your driver</CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <MapView
+                  pickup={pickup}
+                  destination={destination}
+                  showRoute={true}
+                />
+
+                <div className="space-y-2">
+                  <Label>Available Drivers</Label>
+                  <div className="space-y-3">
+                    {availableRiders.map((rider) => (
+                      <div
+                        key={rider.id}
+                        className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted cursor-pointer"
+                        onClick={() => handleSelectRider(rider.id)}
+                      >
+                        <div className="flex items-center gap-3">
+                          <Avatar>
+                            <AvatarImage src={rider.image} alt={rider.name} />
+                            <AvatarFallback>
+                              {rider.name.charAt(0)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <div className="font-medium">{rider.name}</div>
+                            <div className="text-sm text-muted-foreground">
+                              {rider.vehicle}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-medium">{rider.price}</div>
+                          <div className="text-sm text-muted-foreground">
+                            {rider.eta} away
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </CardContent>
+              <CardFooter>
+                <Button onClick={handleConfirmRide} className="w-full">
+                  Confirm Ride
+                </Button>
+              </CardFooter>
+            </Card>
+          )}
+
+          {step === 5 && (
             <div className="space-y-4">
               <MapView
                 pickup={pickup}

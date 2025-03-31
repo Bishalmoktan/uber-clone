@@ -3,7 +3,7 @@ import { getDistanceAndTime } from "./maps.service";
 import { CreateRideDTO } from "../types/ride.type";
 import { RideModel } from "../models/ride.model";
 
-export const getFare = async (pickup: string, destination: string) => {
+export const getFareForAll = async (pickup: string, destination: string) => {
   if (!pickup || !destination) {
     throw new Error("Pickup and destination are required");
   }
@@ -66,7 +66,7 @@ export const createRideService = async ({
     throw new Error("All fields are required");
   }
 
-  const fare = await getFare(pickup, destination);
+  const fare = await getFareForAll(pickup, destination);
 
   const ride = RideModel.create({
     user,

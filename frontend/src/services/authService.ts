@@ -1,7 +1,15 @@
 import { RegisterRiderType } from "@/pages/RiderSignupPage";
 import axios from "axios";
 
-const API_URL = `${import.meta.env.VITE_API_URL}/api`;
+export const API_URL = `${import.meta.env.VITE_API_URL}/api`;
+
+export const api = axios.create({
+  baseURL: API_URL,
+  headers: {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${localStorage.getItem("token")}`,
+  },
+});
 
 export const registerUser = async (data: {
   fullname: { firstname: string; lastname?: string };
