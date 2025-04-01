@@ -52,7 +52,7 @@ export const loginRider = async (data: { email: string; password: string }) => {
   const response = await axios.post(`${API_URL}/riders/login`, data);
   if (response.data.token) {
     localStorage.setItem("token", response.data.token);
-    localStorage.setItem("user", JSON.stringify(response.data.user));
+    localStorage.setItem("user", JSON.stringify(response.data.rider));
   }
   return response.data;
 };

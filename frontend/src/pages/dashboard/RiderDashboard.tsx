@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -17,6 +17,8 @@ import { Label } from "@/components/ui/label";
 import { Car, CheckCircle, Clock, MapPin, Navigation } from "lucide-react";
 import MapView from "@/components/map-view";
 import RideInfoCard from "@/components/rider-info-card";
+import { useUser } from "@/context/user-context";
+import { useSocket } from "@/context/socket-context";
 
 // Mock data for ride requests
 const rideRequests = [
@@ -70,6 +72,16 @@ export default function RiderDashboard() {
     "ongoing"
   );
 
+  const { socket } = useSocket();
+  const { user, userId, userType } = useUser();
+
+  useEffect(() => {
+    socket?.emit("join", {
+      userId,
+      userType,
+    });
+  }, [socket]);
+
   const handleAcceptRide = (rideId: number) => {
     setActiveRide(rideId);
     setRideStatus("ongoing");
@@ -96,7 +108,9 @@ export default function RiderDashboard() {
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
-                <CardTitle>Driver Dashboard</CardTitle>
+                <CardTitle>
+                  {user?.fullname?.firstname + " " + user?.fullname?.lastname}{" "}
+                </CardTitle>
                 <div className="flex items-center space-x-2">
                   <Switch
                     id="online-mode"

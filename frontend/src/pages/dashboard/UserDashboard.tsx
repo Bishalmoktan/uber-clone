@@ -18,6 +18,8 @@ import { LocationInput } from "@/components/location-input";
 import VehiclePanel from "@/components/vehicle-panel";
 import { Label } from "@/components/ui/label";
 import { useCreateRide } from "@/services/ride.Service";
+import { useSocket } from "@/context/socket-context";
+import { useUser } from "@/context/user-context";
 
 // Mock data for available riders
 const availableRiders = [
@@ -72,7 +74,17 @@ export default function UserDashboard() {
   const [rideStatus, setRideStatus] = useState<
     "ongoing" | "pending" | "completed"
   >("ongoing");
+
+  const { socket } = useSocket();
+  const { userId, userType } = useUser();
   const { mutate: confirmRide } = useCreateRide();
+
+  useEffect(() => {
+    socket?.emit("join", {
+      userId,
+      userType,
+    });
+  }, [socket]);
 
   const handleFindRiders = (e: React.FormEvent) => {
     e.preventDefault();
