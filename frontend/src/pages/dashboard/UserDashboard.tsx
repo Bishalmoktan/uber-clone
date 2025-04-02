@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import type React from "react";
 
 import { useEffect, useState } from "react";
@@ -21,56 +22,13 @@ import { useCreateRide } from "@/services/ride.Service";
 import { useSocket } from "@/context/socket-context";
 import { useUser } from "@/context/user-context";
 
-// Mock data for available riders
-const availableRiders = [
-  {
-    id: 1,
-    name: "John Doe",
-    rating: 4.8,
-    vehicle: "Toyota Camry",
-    vehicleType: "sedan",
-    eta: "3 min",
-    price: "$12.50",
-    image: "/placeholder.svg?height=40&width=40",
-  },
-  {
-    id: 2,
-    name: "Sarah Smith",
-    rating: 4.9,
-    vehicle: "Honda Civic",
-    vehicleType: "sedan",
-    eta: "5 min",
-    price: "$11.75",
-    image: "/placeholder.svg?height=40&width=40",
-  },
-  {
-    id: 3,
-    name: "Mike Johnson",
-    rating: 4.7,
-    vehicle: "Ford Explorer",
-    vehicleType: "suv",
-    eta: "7 min",
-    price: "$15.25",
-    image: "/placeholder.svg?height=40&width=40",
-  },
-  {
-    id: 4,
-    name: "Emily Davis",
-    rating: 4.9,
-    vehicle: "Tesla Model 3",
-    vehicleType: "premium",
-    eta: "4 min",
-    price: "$18.50",
-    image: "/placeholder.svg?height=40&width=40",
-  },
-];
-
 export default function UserDashboard() {
   const [step, setStep] = useState(1);
   const [pickup, setPickup] = useState("");
   const [destination, setDestination] = useState("");
   const [vehicleType, setVehicleType] = useState("");
   const [selectedRider, setSelectedRider] = useState<number | null>(null);
+  const [availableRides, setAvailableRides] = useState<any>([]);
   const [rideStatus, setRideStatus] = useState<
     "ongoing" | "pending" | "completed"
   >("ongoing");
@@ -83,6 +41,11 @@ export default function UserDashboard() {
     socket?.emit("join", {
       userId,
       userType,
+    });
+
+    socket?.on("ride-confirmed", (data) => {
+      console.log(data);
+      setAvailableRides((prev) => [...prev, data]);
     });
   }, [socket]);
 
@@ -108,8 +71,8 @@ export default function UserDashboard() {
     setStep(4);
     confirmRide(
       {
-        pickup: "mulpani",
-        destination: "jorpati",
+        pickup,
+        destination,
         vehicleType: vehicleType,
       },
       {
@@ -137,7 +100,7 @@ export default function UserDashboard() {
   };
 
   const getSelectedRider = () => {
-    return availableRiders.find((r) => r.id === selectedRider);
+    return availableRides.find((r) => r._id === selectedRider);
   };
 
   return (
@@ -292,30 +255,36 @@ export default function UserDashboard() {
                 <div className="space-y-2">
                   <Label>Available Drivers</Label>
                   <div className="space-y-3">
-                    {availableRiders.map((rider) => (
+                    {availableRides.map((ride) => (
                       <div
-                        key={rider.id}
+                        key={ride._id}
                         className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted cursor-pointer"
-                        onClick={() => handleSelectRider(rider.id)}
                       >
                         <div className="flex items-center gap-3">
                           <Avatar>
-                            <AvatarImage src={rider.image} alt={rider.name} />
+                            <AvatarImage
+                              src={ride.image}
+                              alt={ride.rider.fullname.firstname}
+                            />
                             <AvatarFallback>
-                              {rider.name.charAt(0)}
+                              {ride.rider.fullname.firstname.charAt(0)}
                             </AvatarFallback>
                           </Avatar>
                           <div>
-                            <div className="font-medium">{rider.name}</div>
+                            <div className="font-medium">
+                              {ride.rider.fullname.firstname +
+                                " " +
+                                ride.rider.fullname.lastname}
+                            </div>
                             <div className="text-sm text-muted-foreground">
-                              {rider.vehicle}
+                              {ride.vehicle}
                             </div>
                           </div>
                         </div>
                         <div className="text-right">
-                          <div className="font-medium">{rider.price}</div>
+                          <div className="font-medium">₹{ride.fare}</div>
                           <div className="text-sm text-muted-foreground">
-                            {rider.eta} away
+                            OPT: {ride.otp}
                           </div>
                         </div>
                       </div>

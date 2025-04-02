@@ -9,7 +9,6 @@ type RideData = {
 
 const createRide = async (rideData: RideData) => {
   const { data } = await api.post("/ride/create-ride", rideData);
-  console.log(data);
   return data;
 };
 

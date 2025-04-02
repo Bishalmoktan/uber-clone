@@ -5,11 +5,11 @@ export const RideSchema = new Schema<IRide>({
   user: {
     type: Schema.Types.ObjectId,
     required: true,
-    ref: "user",
+    ref: "User",
   },
   rider: {
     type: Schema.Types.ObjectId,
-    ref: "rider",
+    ref: "Rider",
   },
   fare: {
     type: Number,

@@ -79,3 +79,32 @@ export const createRideService = async ({
 
   return ride;
 };
+
+export const confirmRideService = async (rideId: string, riderId: string) => {
+  if (!rideId) {
+    throw new Error("Ride id is required");
+  }
+
+  await RideModel.findOneAndUpdate(
+    {
+      _id: rideId,
+    },
+    {
+      status: "accepted",
+      rider: riderId,
+    }
+  );
+
+  const ride = await RideModel.findOne({
+    _id: rideId,
+  })
+    .populate("user")
+    .populate("rider")
+    .select("+otp");
+
+  if (!ride) {
+    throw new Error("Ride not found");
+  }
+
+  return ride;
+};

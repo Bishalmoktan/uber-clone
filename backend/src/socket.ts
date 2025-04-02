@@ -18,13 +18,29 @@ export function initializeSocket(server: any) {
     socket.on("join", async (data) => {
       const { userId, userType } = data;
 
-      console.log(userId, userType);
-
       if (userType === "user") {
         await UserModel.findByIdAndUpdate(userId, { socketId: socket.id });
       } else if (userType === "rider") {
         await RiderModel.findByIdAndUpdate(userId, { socketId: socket.id });
       }
+    });
+
+    socket.on("update-rider-location", async (data) => {
+      const { userId, location } = data;
+
+      if (!location || !location.ltd || !location.lng) {
+        socket.emit("error", {
+          message: "Invalid location data",
+        });
+        return;
+      }
+
+      await RiderModel.findByIdAndUpdate(userId, {
+        location: {
+          ltd: location.ltd,
+          lng: location.lng,
+        },
+      });
     });
 
     socket.on("disconnect", () => {
@@ -34,8 +50,6 @@ export function initializeSocket(server: any) {
 }
 
 export const sendMessageToSocketId = (socketId: any, messageObject: any) => {
-  console.log(messageObject);
-
   if (io) {
     io.to(socketId).emit(messageObject.event, messageObject.data);
   } else {

@@ -1,11 +1,14 @@
 import axios from "axios";
 
 import { GOOGLE_MAP_API } from "../config/env";
+import RiderModel from "../models/rider.model";
 
 export const getAddressCoordinate = async (address: string) => {
   const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(
     address
   )}&key=${GOOGLE_MAP_API}`;
+
+  console.log(address);
   try {
     const response = await axios.get(url);
     if (response.data.status === "OK") {
@@ -50,6 +53,22 @@ export const getDistanceAndTime = async (
     console.error(err);
     throw err;
   }
+};
+
+export const getRiderWithinRadius = async (
+  ltd: number,
+  lng: number,
+  radius: number
+) => {
+  const captains = await RiderModel.find({
+    location: {
+      $geoWithin: {
+        $centerSphere: [[ltd, lng], radius / 6371],
+      },
+    },
+  });
+
+  return captains;
 };
 
 export const getAutoCompleteSuggestionsForLocation = async (input: string) => {

@@ -1,7 +1,14 @@
 import express from "express";
 import { body, query } from "express-validator";
-import { userMiddleware } from "../middlewares/auth.middleware";
-import { createRide, getFare } from "../controllers/ride.controller";
+import {
+  riderMiddleware,
+  userMiddleware,
+} from "../middlewares/auth.middleware";
+import {
+  confirmRide,
+  createRide,
+  getFare,
+} from "../controllers/ride.controller";
 
 const router = express.Router();
 
@@ -21,6 +28,13 @@ router.post(
     .isIn(["auto", "car", "bike"])
     .withMessage("Invalid vehicle type"),
   createRide
+);
+
+router.post(
+  "/confirm",
+  riderMiddleware,
+  body("rideId").isMongoId().withMessage("Invalid ride id"),
+  confirmRide
 );
 
 router.get(
