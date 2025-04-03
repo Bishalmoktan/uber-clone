@@ -11,24 +11,27 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { ArrowLeft, Search } from "lucide-react";
+import { ArrowLeft, Loader2Icon, Search } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import MapView from "@/components/map-view";
 import RideInfoCard from "@/components/rider-info-card";
 import { LocationInput } from "@/components/location-input";
 import VehiclePanel from "@/components/vehicle-panel";
 import { Label } from "@/components/ui/label";
-import { useCreateRide } from "@/services/ride.Service";
+import { useCreateRide, useStartRide } from "@/services/ride.Service";
 import { useSocket } from "@/context/socket-context";
 import { useUser } from "@/context/user-context";
+import { cn } from "@/lib/utils";
+import toast from "react-hot-toast";
 
 export default function UserDashboard() {
   const [step, setStep] = useState(1);
   const [pickup, setPickup] = useState("");
   const [destination, setDestination] = useState("");
   const [vehicleType, setVehicleType] = useState("");
-  const [selectedRider, setSelectedRider] = useState<number | null>(null);
+  const [selectedRider, setSelectedRider] = useState<string>("");
   const [availableRides, setAvailableRides] = useState<any>([]);
+  const [activeRide, setActiveRide] = useState<any>(null);
   const [rideStatus, setRideStatus] = useState<
     "ongoing" | "pending" | "completed"
   >("ongoing");
@@ -36,6 +39,7 @@ export default function UserDashboard() {
   const { socket } = useSocket();
   const { userId, userType } = useUser();
   const { mutate: confirmRide } = useCreateRide();
+  const { mutate: startRide } = useStartRide();
 
   useEffect(() => {
     socket?.emit("join", {
@@ -44,8 +48,12 @@ export default function UserDashboard() {
     });
 
     socket?.on("ride-confirmed", (data) => {
-      console.log(data);
       setAvailableRides((prev) => [...prev, data]);
+    });
+
+    socket?.on("ride-ended", () => {
+      toast.success("Ride completed");
+      setRideStatus("completed");
     });
   }, [socket]);
 
@@ -62,13 +70,7 @@ export default function UserDashboard() {
     }
   }, [vehicleType]);
 
-  const handleSelectRider = (riderId: number) => {
-    setSelectedRider(riderId);
-    // setStep(3);
-  };
-
   const handleConfirmRide = () => {
-    setStep(4);
     confirmRide(
       {
         pickup,
@@ -88,20 +90,40 @@ export default function UserDashboard() {
     setRideStatus("pending");
   };
 
-  const handleEndRide = () => {
-    setRideStatus("completed");
+  const handleStartRide = () => {
+    if (!selectedRider) {
+      toast.error("No ride is selected");
+      return;
+    }
+    startRide(
+      {
+        rideId: selectedRider,
+        riderId: availableRides.find((ride: any) => (ride._id = selectedRider))
+          .rider._id,
+      },
+      {
+        onSuccess: (data) => {
+          toast.success("Ride started!");
+          setRideStatus("ongoing");
+          setActiveRide(data);
+          setStep(5);
+        },
+        onError: (error: unknown) => {
+          toast.error("Something went wrong!");
+          console.error("Ride creation failed:", error);
+        },
+      }
+    );
   };
 
   const handleNewRide = () => {
     setStep(1);
-    setSelectedRider(null);
+    setSelectedRider("");
     setPickup("");
     setDestination("");
   };
 
-  const getSelectedRider = () => {
-    return availableRides.find((r) => r._id === selectedRider);
-  };
+  console.log(selectedRider);
 
   return (
     <div className="min-h-screen">
@@ -221,7 +243,7 @@ export default function UserDashboard() {
               </CardContent>
               <CardFooter>
                 <Button onClick={handleConfirmRide} className="w-full">
-                  Confirm Ride
+                  Search Rider
                 </Button>
               </CardFooter>
             </Card>
@@ -255,10 +277,20 @@ export default function UserDashboard() {
                 <div className="space-y-2">
                   <Label>Available Drivers</Label>
                   <div className="space-y-3">
+                    {availableRides.length === 0 && (
+                      <div className="flex gap-2">
+                        <Loader2Icon className="animate-spin" />
+                        <span>Searching for driver...</span>
+                      </div>
+                    )}
                     {availableRides.map((ride) => (
                       <div
                         key={ride._id}
-                        className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted cursor-pointer"
+                        className={cn(
+                          "flex items-center justify-between p-3 border rounded-lg hover:bg-muted cursor-pointer",
+                          selectedRider === ride._id && "border border-blue-500"
+                        )}
+                        onClick={() => setSelectedRider(ride._id)}
                       >
                         <div className="flex items-center gap-3">
                           <Avatar>
@@ -293,7 +325,7 @@ export default function UserDashboard() {
                 </div>
               </CardContent>
               <CardFooter>
-                <Button onClick={handleConfirmRide} className="w-full">
+                <Button onClick={handleStartRide} className="w-full">
                   Confirm Ride
                 </Button>
               </CardFooter>
@@ -309,37 +341,7 @@ export default function UserDashboard() {
                 className="h-[200px] w-full rounded-lg overflow-hidden"
               />
 
-              {(() => {
-                const rider = getSelectedRider();
-                if (!rider) return null;
-
-                const rideInfo = {
-                  id: rider.id,
-                  driver: {
-                    name: rider.name,
-                    rating: rider.rating,
-                    vehicle: rider.vehicle,
-                    vehicleType: rider.vehicleType,
-                    image: rider.image,
-                  },
-                  pickup: pickup,
-                  destination: destination,
-                  distance: "3.5 miles",
-                  estimatedFare: rider.price,
-                  eta: rideStatus === "ongoing" ? "10 min" : "0 min",
-                  status: rideStatus,
-                };
-
-                return (
-                  <RideInfoCard
-                    role="passenger"
-                    ride={rideInfo}
-                    onComplete={handleEndRide}
-                    onCancel={handleNewRide}
-                  />
-                );
-              })()}
-
+              <RideInfoCard {...activeRide} role="user" />
               {rideStatus === "completed" && (
                 <Card>
                   <CardContent className="pt-6 text-center">

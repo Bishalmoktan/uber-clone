@@ -17,3 +17,23 @@ export const useCreateRide = () => {
     mutationFn: createRide,
   });
 };
+
+type StartRideData = {
+  riderId: string;
+  rideId: string;
+};
+
+const startRide = async ({ riderId, rideId }: StartRideData) => {
+  const { data } = await api.post("/ride/start-ride", {
+    rideId,
+    riderId,
+  });
+
+  return data;
+};
+
+export const useStartRide = () => {
+  return useMutation({
+    mutationFn: startRide,
+  });
+};

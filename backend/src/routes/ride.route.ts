@@ -7,7 +7,9 @@ import {
 import {
   confirmRide,
   createRide,
+  endRide,
   getFare,
+  startRide,
 } from "../controllers/ride.controller";
 
 const router = express.Router();
@@ -35,6 +37,21 @@ router.post(
   riderMiddleware,
   body("rideId").isMongoId().withMessage("Invalid ride id"),
   confirmRide
+);
+
+router.post(
+  "/start-ride",
+  userMiddleware,
+  body("rideId").isMongoId().withMessage("Invalid ride id"),
+  body("riderId").isMongoId().withMessage("Invalid rider id"),
+  startRide
+);
+
+router.post(
+  "/end-ride",
+  riderMiddleware,
+  body("rideId").isMongoId().withMessage("Invalid ride id"),
+  endRide
 );
 
 router.get(

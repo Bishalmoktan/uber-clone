@@ -3,7 +3,9 @@ import { validationResult } from "express-validator";
 import {
   confirmRideService,
   createRideService,
+  endRideService,
   getFareForAll,
+  startRideService,
 } from "../services/ride.service";
 import {
   getAddressCoordinate,
@@ -100,5 +102,52 @@ export const getFare = async (req: Request, res: Response) => {
   } catch (err) {
     console.log(err);
     res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+export const startRide = async (req: Request, res: Response) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    res.status(400).json({ errors: errors.array() });
+    return;
+  }
+
+  const { rideId, riderId } = req.body;
+  try {
+    const ride = await startRideService(rideId as string, riderId);
+
+    console.log(ride);
+
+    sendMessageToSocketId(ride!.rider!.socketId, {
+      event: "ride-started",
+      data: ride,
+    });
+
+    res.status(200).json(ride);
+  } catch (err) {
+    res.status(500).json({ message: err });
+  }
+};
+
+export const endRide = async (req: Request, res: Response) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    res.status(400).json({ errors: errors.array() });
+    return;
+  }
+
+  const { rideId } = req.body;
+
+  try {
+    const ride = await endRideService(rideId, req.rider);
+
+    sendMessageToSocketId(ride.user.socketId, {
+      event: "ride-ended",
+      data: ride,
+    });
+
+    res.status(200).json(ride);
+  } catch (err) {
+    res.status(500).json({ message: err });
   }
 };
